@@ -20,7 +20,7 @@ def main(
     
     #target args
     domain          : str   = typer.Option(..., '-d',  help="Domain "),
-    dc_ip           : str   = typer.Option(..., '-dc-ip',  help = "IP address of domain controller"),
+    dc_ip           : str   = typer.Option(..., '--target', '-t',  help = "IP address of target host"),
     fqdn            : str  = typer.Option(False, '-fqdn', help="FQDN of target host"),
 
     #other
