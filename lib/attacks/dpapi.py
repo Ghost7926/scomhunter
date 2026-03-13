@@ -23,7 +23,7 @@ logging.getLogger('aiosmb').setLevel(logging.ERROR)
 class DPAPIHUNTER():
     
     def __init__(self, username:str = None, password: str = None, hashes: str = None, aes: str = None, 
-                 kerberos: str = False, no_pass: bool = False, domain: str = None, dc_ip: str = None, 
+                 kerberos: str = False, no_pass: bool = False, domain: str = None, target: str = None, 
                  fqdn: str = None, verbose: str = False):
         #auth vars
         self.username = username
@@ -35,7 +35,7 @@ class DPAPIHUNTER():
         
         #target vars
         self.domain = domain
-        self.dc_ip = dc_ip
+        self.target = target
         self.protocol = "smb-tcp"
         self.fqdn = fqdn
 
@@ -210,7 +210,7 @@ class DPAPIHUNTER():
             "password": self.password,
             "nt": self.hashes,
             "aes": self.aes,
-            "dcip": self.dc_ip,
+            "dcip": self.target,
             "fqdn": self.fqdn,  
             "protocol": self.protocol,
             "kerberos": self.kerberos,
