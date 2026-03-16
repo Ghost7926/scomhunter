@@ -99,6 +99,7 @@ class DPAPI:
 
         return
 
+
     def decrypt_blob(self):
         entropy_size = 0x400
         for blob in self.blob:
@@ -127,7 +128,6 @@ class DPAPI:
             domain, username, password = decoded_string[:3]
             logger.info(f"[+] Got RunAs Credential: {domain}\\{username}:{password}")
             return decoded_string
-
     def cleanup(self):
         if self.remote_ops:
             self.remote_ops.finish()
