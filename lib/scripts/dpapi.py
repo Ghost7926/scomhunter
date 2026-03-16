@@ -106,27 +106,31 @@ class DPAPI:
         for blob in self.blob:
             blob_data = blob[:-entropy_size]
             entropy = blob[-entropy_size:]
-    
+         
+            # Identify the masterkey from the blob
             blob = DPAPI_BLOB(blob_data)
             mkid = bin_to_string(blob['GuidMasterKey'])
-    
+
+
+            # If we don't have the masterkey, we triage it
             if mkid not in self.raw_masterkeys:
                 self.triage_masterkey(mkid)
-    
+
+         
             key = self.masterkeys.get(mkid, None)
             if key is None:
                 logger.info("[!] Could not decrypt masterkey " + mkid)
-                continue     # skip this blob, try next
+                continue  # skip this blob, try next
     
             decrypted = blob.decrypt(key, entropy)
             if not decrypted:
                 logger.debug(f"[-] Failed to decrypt blob for masterkey: {mkid}")
-                continue      # skip, try next
+                continue  # skip, try next
     
             decoded_string = decrypted.decode('utf-16le').split('\x00')
             domain, username, password = decoded_string[:3]
             logger.info(f"[+] Got RunAs Credential: {domain}\\{username}:{password}")
-            credentials.append(decoded_string)    # collect, don't return
+            credentials.append(decoded_string)  # collect, don't return
     
         if not credentials:
             logger.info("[-] No credentials successfully decrypted")
